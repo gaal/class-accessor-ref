@@ -3,7 +3,11 @@ use strict;
 
 my $f = Fruit->new({name=>"strawberry"});
 $f->guess_color("the devil");
-print "My ". $f->name. " is ". $f->color. ".\n";
+print "My ". $f->name. " is ". $f->color. ".\n\n";
+
+print "\nReference gotten by refaccessor: ". $f->_ref_color;
+print "\nReference gotten by generic (symbolic) reference accessor ", $f->get_ref('color');
+print "\n(They should be the same.)\n\n";
 
 exit 0;
 

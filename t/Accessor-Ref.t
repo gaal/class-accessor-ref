@@ -45,15 +45,15 @@ sub eqarray  {
 }
 
 # Change this to your # of ok() calls + 1
-BEGIN { $Total_tests = 3 }
+BEGIN { $Total_tests = 5 }
 
 
 # Set up a testing package.
 package Foo;
 
 @Foo::ISA = qw(Class::Accessor::Ref);
-Foo->mk_accessors(qw( foo bar ));
-Foo->mk_refaccessors(qw(foo));
+Foo->mk_accessors(qw( foo bar baz ));
+Foo->mk_refaccessors(qw(foo baz));
 
 package main;
 
@@ -66,10 +66,12 @@ sub beautify {
 
 # Test accessors.
 beautify($test->_ref_foo);
-ok( $test->foo   eq 'pretty cat',                       'refaccessor generation' );
+ok( $test->foo eq 'pretty cat',                         'refaccessor generation' );
+ok( $test->_ref_foo eq $test->get_ref('foo'),           'get_ref access (scalar context)' );
+ok( $test->_ref_baz eq ($test->get_ref(qw/foo baz/))[1], 'get_ref access (list context))' );
 
 eval {
     beautify($test->_ref_bar);
 };
-ok( scalar $@ =~ /^Can't locate object method "_ref_bar" via package "Foo"/, 'refaccessor generation doesn\'t leak accessors' );
+ok( scalar $@ =~ /^Can't locate object method "_ref_bar" via package "Foo"/, 'refaccessor generation leak check' );
 
