@@ -66,12 +66,11 @@ sub beautify {
 
 # Test accessors.
 beautify($test->_ref_foo);
-ok( $test->foo eq 'pretty cat',                         'refaccessor generation' );
-ok( $test->_ref_foo eq $test->get_ref('foo'),           'get_ref access (scalar context)' );
-ok( $test->_ref_baz eq ($test->get_ref(qw/foo baz/))[1], 'get_ref access (list context))' );
+ok( $test->foo eq 'pretty cat',                           'refaccessor generation' );
+ok( $test->_ref_foo eq $test->get_ref('foo'),             'get_ref access (scalar context)' );
+ok( $test->_ref_baz eq ($test->get_ref(qw/foo baz/))[1],  'get_ref access (list context))' );
 
 eval {
     beautify($test->_ref_bar);
 };
 ok( scalar $@ =~ /^Can't locate object method "_ref_bar" via package "Foo"/, 'refaccessor generation leak check' );
-
