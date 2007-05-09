@@ -1,9 +1,15 @@
-use ExtUtils::MakeMaker;
+use inc::Module::Install;
 
 require 5.00502;
 
-WriteMakefile(
-    NAME                => 'Class::Accessor::Ref',
-    VERSION_FROM        => 'lib/Class/Accessor/Ref.pm',
-    PREREQ_PM           => { 'Class::Accessor' => '0.10', },
-);
+name          ('Class-Accessor-Ref');
+license       ('MIT');
+all_from      ('lib/Class/Accessor/Ref.pm');
+requires      ('Class::Accessor' => '0.10');
+build_requires('Test::More'      => 0,);
+
+sign;
+
+auto_install;
+WriteAll;
+

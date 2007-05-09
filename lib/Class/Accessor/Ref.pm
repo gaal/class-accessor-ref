@@ -1,9 +1,11 @@
 package Class::Accessor::Ref;
 
 use strict;
-use vars qw($VERSION);
-$VERSION = '0.03';
+use vars qw($VERSION $_DEBUG);
+$VERSION = '0.04';
 use base 'Class::Accessor';
+
+$_DEBUG = 0;
 
 =pod
 
@@ -14,6 +16,7 @@ Class::Accessor::Ref - Access members by reference
 =head1 SYNOPSIS
 
   package Foo;
+  use Class::Accessor::Ref;
   use base qw(Class::Accessor::Ref);
   use Some::API;
 
@@ -29,6 +32,10 @@ Class::Accessor::Ref - Access members by reference
   # safe against typos in memeber name
   ${ $obj->get_ref('color') } =~ s/^(.)/\U$1/;
 
+  # same as above, but shorter setup
+  package Foo;
+  use Class::Accessor::Ref qw(fruit color);
+
 =head1 DESCRIPTION
 
 This is an extension of Class::Accessor that allows taking a reference
@@ -36,7 +43,7 @@ of members of an object. This is typically useful when your class
 implementation uses a third-party module that expects an in/out parameter
 in its interface.
 
-Without Class::Accessor::Ref, you might try to do somethin like
+Without Class::Accessor::Ref, you might try to do something like
 
   my $reference = \$obj->member;   # WRONG!
   Some::API::call($reference);
@@ -74,6 +81,7 @@ sub mk_refaccessors {
 	my($class, @fields) = @_;
 	no strict 'refs';
 	for my $field (@fields) {
+		if ($_DEBUG) { warn "$class->mk_refaccessors($field)\n" }
 		die "$field is not a valid field" unless $class->can($field);
 		# Canfield's some sort of a game, isn't it?
 		*{"${class}::_ref_$field"} = sub { $ref_accessor->($_[0], $field) };
@@ -98,8 +106,8 @@ Foreach field in @fields it will generate one accessor called
 been created with Class::Accessor::mk_accessors(). For example:
 
     # Generates _ref_foo(), _ref_bar() but not _ref_baz():
-    #     Class->mk_accessors(qw(foo bar baz));
-    #     Class->mk_refaccessors(qw(foo bar));
+          Class->mk_accessors(qw(foo bar baz));
+          Class->mk_refaccessors(qw(foo bar));
 
 It is up to the user of this reference to know what to do with it.
 
@@ -113,15 +121,13 @@ This method is useful if you want to fetch several references from the object
 at once, or if you don't like the _ref_ prefix.
 
     # Get referece to $obj->{foo}
-    #     $fooref = $obj->get_ref('foo');
+          $fooref = $obj->get_ref('foo');
     #
     # Get several references at once
-    #     ($fooref, $barref) = $obj->get_ref(qw/foo bar/);
+          ($fooref, $barref) = $obj->get_ref(qw/foo bar/);
     #
     # Stringify the reference, not the number "1":
-    #     print "\$obj->{foo} is at " . $obj->get_ref('foo');
-
-=back
+          print "\$obj->{foo} is at " . $obj->get_ref('foo');
 
 =cut
 
@@ -146,6 +152,50 @@ sub get_ref {
 	return wantarray ? @refs : $refs[0];
 }
 
+=item B<import>
+
+    use Class::Accessor::Ref qw(foo bar baz);
+
+For the sake of convenience, you can specify what fields to generate
+accessors for on the C<use> line. It also makes your calling package
+a subclass of Class::Accessor::Ref, so you don't need to C<use base>.
+If you want to generate refaccessors for only a subset of your regular
+accessors, don't use this option, but rather make separate calls to
+mk_accessors and mk_refaccessors. [Supporting this on the C<use> line
+was considered, but I decided it was too cumbersome and would break code
+that's just switching from Class::Accessor.]
+
+    package Foo;
+    use Class::Accessor::Ref qw(foo bar baz);
+
+Is equivalent to
+
+    package Foo;
+    use Class::Accessor::Ref;
+    use base 'Class::Accessor::Ref';
+    Foo->mk_accessors(qw/foo bar baz/);
+    Foo->mk_refaccessors(qw/foo bar baz/);
+
+=back
+
+=cut
+
+sub import {
+	my($class, @fields) = @_;
+    return if !@fields;
+	my $call_pkg = (caller)[0];
+	if ($_DEBUG) { warn "$class: use C::A::R qw(".(join " ", @fields).")\n" }
+    {
+        # fake C<< packge Foo; use base 'Class::Accessor::Ref' >>
+        no strict 'refs';
+        push @{"$call_pkg\::ISA"}, $class;
+    }
+	if (@fields) {
+		$call_pkg->mk_accessors(@fields);
+		$call_pkg->mk_refaccessors(@fields);
+	}
+}
+
 =head1 CAVEATS
 
 Class::Accessor::Ref generates methods called _ref_SOMETHING in the
@@ -160,6 +210,29 @@ example, by overriding the normal setter method), this can be considered
 somewhat unsafe. The main use of Class::Accessor::Ref is inside class
 implementations, where you have control over who you trust with giving
 a reference to your private data and who you don't.
+
+=head1 COPYRIGHT (The "MIT" License)
+
+Copyright 2003-2007 Gaal Yahas.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
 
 =head1 AUTHOR
 
