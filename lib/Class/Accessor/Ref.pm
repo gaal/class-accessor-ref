@@ -2,7 +2,7 @@ package Class::Accessor::Ref;
 
 use strict;
 use vars qw($VERSION $_DEBUG);
-$VERSION = '0.04';
+$VERSION = '0.05';
 use base 'Class::Accessor';
 
 $_DEBUG = 0;
